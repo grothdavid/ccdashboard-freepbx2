@@ -14,8 +14,7 @@ COPY postcss.config.js ./
 COPY index.html ./
 
 # Install dependencies
-RUN npm ci --only=production
-
+    RUN npm ci
 # Copy source code
 COPY src/ ./src/
 COPY public/ ./public/
