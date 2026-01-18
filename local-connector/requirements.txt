@@ -1,0 +1,27 @@
+# FreePBX Local Connector Dependencies
+
+# Async MySQL connector
+aiomysql>=0.1.1
+
+# HTTP client for Azure communication
+aiohttp>=3.8.0
+
+# Fast web server framework
+fastapi>=0.100.0
+uvicorn>=0.23.0
+
+# For parsing AMI responses
+pydantic>=2.0.0
+
+# For configuration management
+python-dotenv>=1.0.0
+
+# For logging and utilities
+structlog>=23.0.0
+
+# For process management (optional)
+psutil>=5.9.0
+
+# Development dependencies (optional)
+# pytest>=7.0.0
+# pytest-asyncio>=0.21.0

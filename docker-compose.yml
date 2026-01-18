@@ -1,0 +1,56 @@
+# FreePBX Dashboard - Development Environment
+version: '3.8'
+
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - PBX_CONNECTOR_ENDPOINT=http://localhost:8080
+      - PBX_CONNECTOR_SECRET=dev-secret-token
+    volumes:
+      - ./server:/app/server:ro
+      - ./src:/app/src:ro
+    depends_on:
+      - connector
+    restart: unless-stopped
+    networks:
+      - freepbx-net
+
+  connector:
+    build:
+      context: ./local-connector
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8080:8080"
+    environment:
+      - AMI_HOST=freepbx-server
+      - AMI_PORT=5038
+      - AMI_USERNAME=dashboard_user
+      - AMI_PASSWORD=change_this_password
+      - MYSQL_HOST=freepbx-server
+      - MYSQL_PORT=3306
+      - MYSQL_USER=dashboard_ro
+      - MYSQL_PASSWORD=change_this_password
+      - MYSQL_DATABASE=asterisk
+      - WEB_SERVER_HOST=0.0.0.0
+      - WEB_SERVER_PORT=8080
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./local-connector:/app:ro
+      - connector-logs:/var/log/freepbx-connector
+    restart: unless-stopped
+    networks:
+      - freepbx-net
+
+volumes:
+  connector-logs:
+
+networks:
+  freepbx-net:
+    external: true
