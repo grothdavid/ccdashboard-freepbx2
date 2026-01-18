@@ -51,9 +51,9 @@ cd $CONNECTOR_DIR
 
 # Create requirements.txt
 cat > requirements.txt << 'EOF'
-aiohttp==3.9.1
-mysql-connector-python==8.2.0
-asyncio-mqtt==0.13.0
+aiohttp>=3.6.0,<4.0.0
+mysql-connector-python>=8.0.23,<8.1.0
+typing-extensions>=3.7.0
 EOF
 
 # Create connector.py (abbreviated version)
@@ -264,9 +264,10 @@ EOF
 echo "🐍 Installing Python packages..."
 echo "Using: $PYTHON_EXEC"
 
-$PYTHON_EXEC -m pip install --user aiohttp==3.9.1
-$PYTHON_EXEC -m pip install --user mysql-connector-python==8.2.0
-$PYTHON_EXEC -m pip install --user asyncio-mqtt==0.13.0
+# Use Python 3.6 compatible versions
+$PYTHON_EXEC -m pip install --user "aiohttp>=3.6.0,<4.0.0"
+$PYTHON_EXEC -m pip install --user "mysql-connector-python>=8.0.23,<8.1.0"
+$PYTHON_EXEC -m pip install --user "typing-extensions>=3.7.0" # Required for Python 3.6
 
 # Test imports
 echo "🧪 Testing imports..."
