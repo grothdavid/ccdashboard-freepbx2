@@ -13,10 +13,57 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-# Display current Python info
-echo "📋 Current Python Environment:"
-echo "Python path: $(which python3)"
-echo "Python version: $(python3 --version)"
+# Find the correct Python 3 executable
+echo "🔍 Finding Python 3 executable..."
+
+PYTHON_EXEC=""
+
+# Check common Python 3 locations
+for py_cmd in python3 python3.9 python3.8 python3.7 /usr/bin/python3 /usr/local/bin/python3; do
+    if command -v "$py_cmd" &> /dev/null; then
+        # Check if it's actually Python 3
+        PY_VERSION=$($py_cmd --version 2>&1 | grep -o '[0-9]\+\.[0-9]\+')
+        PY_MAJOR=$(echo $PY_VERSION | cut -d. -f1)
+        if [[ "$PY_MAJOR" == "3" ]]; then
+            PYTHON_EXEC="$py_cmd"
+            echo "✅ Found Python 3: $PYTHON_EXEC (version $($py_cmd --version 2>&1))"
+            break
+        fi
+    fi
+done
+
+# If still not found, check if regular python is Python 3
+if [[ -z "$PYTHON_EXEC" ]] && command -v python &> /dev/null; then
+    PY_VERSION=$(python --version 2>&1 | grep -o '[0-9]\+\.[0-9]\+')
+    PY_MAJOR=$(echo $PY_VERSION | cut -d. -f1)
+    if [[ "$PY_MAJOR" == "3" ]]; then
+        PYTHON_EXEC="python"
+        echo "✅ Found Python 3: $PYTHON_EXEC (version $(python --version 2>&1))"
+    fi
+fi
+
+# Exit if no Python 3 found
+if [[ -z "$PYTHON_EXEC" ]]; then
+    echo "❌ Python 3 not found!"
+    echo "Available executables:"
+    which python 2>/dev/null && echo "python: $(python --version 2>&1)"
+    which python3 2>/dev/null && echo "python3: $(python3 --version 2>&1)"
+    which python3.9 2>/dev/null && echo "python3.9: $(python3.9 --version 2>&1)"
+    ls /usr/bin/python* 2>/dev/null
+    echo ""
+    echo "❌ Cannot proceed without Python 3. Please check your Python 3 installation."
+    exit 1
+fi
+
+# Get Python site-packages path for PYTHONPATH
+PYTHON_USER_SITE=$($PYTHON_EXEC -m site --user-site)
+PYTHON_USER_BASE=$($PYTHON_EXEC -m site --user-base)
+
+echo "📋 Python Environment Details:"
+echo "Python executable: $(which $PYTHON_EXEC)"
+echo "Python version: $($PYTHON_EXEC --version)"
+echo "User site packages: $PYTHON_USER_SITE"
+echo "User base: $PYTHON_USER_BASE"
 
 # Create connector directory
 CONNECTOR_DIR="/opt/freepbx-connector"
@@ -339,15 +386,15 @@ if __name__ == '__main__':
     asyncio.run(main())
 EOF
 
-# Install packages with existing Python 3.9
-echo "🐍 Installing Python packages with existing Python 3.9..."
-python3 -m pip install --user aiohttp==3.9.1
-python3 -m pip install --user mysql-connector-python==8.2.0
-python3 -m pip install --user asyncio-mqtt==0.13.0
+# Install packages with detected Python 3
+echo "🐍 Installing Python packages with $PYTHON_EXEC..."
+$PYTHON_EXEC -m pip install --user aiohttp==3.9.1
+$PYTHON_EXEC -m pip install --user mysql-connector-python==8.2.0
+$PYTHON_EXEC -m pip install --user asyncio-mqtt==0.13.0
 
 # Test imports
 echo "🧪 Testing Python imports..."
-python3 -c "import aiohttp; import mysql.connector; print('✅ All imports successful')"
+$PYTHON_EXEC -c "import aiohttp; import mysql.connector; print('✅ All imports successful')"
 
 # Create systemd service
 echo "⚙️  Creating systemd service..."
@@ -361,10 +408,10 @@ Type=simple
 User=asterisk
 Group=asterisk
 WorkingDirectory=/opt/freepbx-connector
-ExecStart=$(which python3) /opt/freepbx-connector/connector.py
+ExecStart=$PYTHON_EXEC /opt/freepbx-connector/connector.py
 Restart=always
 RestartSec=10
-Environment=PYTHONPATH=/root/.local/lib/python3.9/site-packages
+Environment=PYTHONPATH=$PYTHON_USER_SITE
 Environment=MYSQL_HOST=localhost
 Environment=MYSQL_USER=freepbxuser
 Environment=MYSQL_PASSWORD=amp109
@@ -385,7 +432,7 @@ chmod +x $CONNECTOR_DIR/connector.py
 
 # Test the service first
 echo "🧪 Testing the connector..."
-timeout 10s python3 connector.py && echo "✅ Test successful" || echo "⚠️  Test completed (timeout expected)"
+timeout 10s $PYTHON_EXEC connector.py && echo "✅ Test successful" || echo "⚠️  Test completed (timeout expected)"
 
 # Enable and start service
 echo "🚀 Enabling and starting service..."
