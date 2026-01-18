@@ -13,10 +13,20 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-# Install Python 3 and pip if not available
-echo "📦 Installing Python dependencies..."
-if ! command -v python3 &> /dev/null; then
+# Check existing Python installation
+echo "📦 Checking Python installation..."
+if command -v python3 &> /dev/null; then
+    PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
+    echo "✅ Found Python $PYTHON_VERSION"
+else
+    echo "❌ Python 3 not found, installing..."
     yum install -y python3 python3-pip
+fi
+
+# Ensure pip is available
+if ! command -v pip3 &> /dev/null; then
+    echo "📦 Installing pip3..."
+    yum install -y python3-pip
 fi
 
 # Create connector directory
@@ -34,7 +44,23 @@ read -p "Press Enter after uploading the files..."
 
 # Install Python requirements
 echo "🐍 Installing Python packages..."
-pip3 install -r requirements.txt
+echo "Using Python: $(which python3)"
+echo "Python version: $(python3 --version)"
+
+# Try pip3 first, then pip if pip3 doesn't exist
+if command -v pip3 &> /dev/null; then
+    echo "Installing with pip3..."
+    pip3 install --user -r requirements.txt
+elif python3 -m pip --version &> /dev/null; then
+    echo "Installing with python3 -m pip..."
+    python3 -m pip install --user -r requirements.txt
+else
+    echo "❌ Cannot find pip. Installing pip manually..."
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+    python3 get-pip.py --user
+    python3 -m pip install --user -r requirements.txt
+    rm get-pip.py
+fi
 
 # Create systemd service
 echo "⚙️  Creating systemd service..."
