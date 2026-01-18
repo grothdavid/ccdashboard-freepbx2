@@ -1,0 +1,6 @@
+<!-- This is a placeholder for iSimplicity.png -->
+<!-- In production, replace with actual logo image -->
+<svg width="200" height="48" viewBox="0 0 200 48" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="48" fill="#2563eb"/>
+  <text x="100" y="30" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="white">iSimplicity</text>
+</svg>
