@@ -1,0 +1,4 @@
+# FreePBX Contact Center Connector Requirements
+aiohttp==3.9.1
+mysql-connector-python==8.2.0
+asyncio-mqtt==0.13.0
